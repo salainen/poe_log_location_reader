@@ -4,12 +4,15 @@ from tkinter import filedialog
 import os
 import time
 import threading
+import datetime
 
 # set location for the leveling_setup.txt:
 dir_path = os.path.dirname(os.path.realpath(__file__))
 leveling_text = dir_path + "/leveling_setup.txt"
 
 global level_data
+global stop_time
+stop_time = False
 
 def read_instructions(line):
 
@@ -89,25 +92,33 @@ def add_row(text_to_add):
     containing the notes related to the location.
     '''
 
+    # split location_data | notes_data into two:
     location_data = text_to_add.split('|')[0]
     notes_data = text_to_add.split('|')[1]
+
     global i 
     i=i+1
+
     items = []
     var = IntVar()
-    c = Checkbutton(root, variable = var)
-    c.val = var
-    items.append(c)
-    c.grid(row = i, column = 0)
-    b = Entry(root, width=20)
-    b.insert(END, location_data)
-    items.append(b)
-    b.grid(row=i, column=1)
 
-    d = Entry(root, width=100)
-    d.insert(END, notes_data)
-    items.append(d)
-    d.grid(row=i, column=2)
+    # create checkmark for deletion purposes:
+    check_mark = Checkbutton(root, variable = var)
+    check_mark.val = var
+    items.append(check_mark)
+    check_mark.grid(row = i, column = 0)
+
+    # create location_data label:
+    location_label = Entry(root, width=30)
+    location_label.insert(END, location_data)
+    items.append(location_label)
+    location_label.grid(row=i, column=1)
+
+    # create notes label:
+    notes_label = Entry(root, width=70)
+    notes_label.insert(END, notes_data)
+    items.append(notes_label)
+    notes_label.grid(row=i, column=2)
 
     rows.append(items)
 
@@ -125,6 +136,57 @@ def delete_row():
                 i.destroy()
             rows.pop(rowno)
 
+def start_timer():
+
+    ''' Starts the timer
+    
+    Starts the timer via starting a new thread timer_thread()
+    Also sets the global flag stop_time to False
+    '''
+
+    global stop_time
+    stop_time = False
+    timer = threading.Thread(target=timer_thread, args=(1,))
+    timer.start()
+
+def stop_timer():
+
+    global stop_time
+    stop_time = True
+
+def timer_thread(time_arg):
+
+    ''' Timer thread
+
+    As long as global variable stop_time is set to False, 
+    the timer will run. It'll update timer_text label 
+    every 10 milliseconds.
+    '''
+
+    # creates the timer label in the main UI
+    timer_text = StringVar()
+    timer_label = Entry(root, textvariable = timer_text, state = 'readonly')
+    timer_text.set('00:00:00')
+    timer_label.grid(row=0, column=2)
+
+    global stop_time
+
+    # time when the thread was called:
+    start_time = datetime.datetime.now()
+
+    # thread loop. loop until stop_time global variable is set
+    # to True:
+    while not stop_time:
+        time.sleep(0.01)
+        current_time = datetime.datetime.now()
+        
+        # calculate time from thread start vs. current time.
+        time_difference = current_time - start_time
+        
+        # set the label text:
+        timer_text.set(str(time_difference)[:-3])
+        
+
 def init_window():
 
     ''' handles main ui creation
@@ -135,6 +197,15 @@ def init_window():
     delete_button = tkinter.Button(root , text = 'Delete selected Row', command = delete_row)
     delete_button.grid(row =0, column=0)
 
+    # Add start clock button
+    timer_button = tkinter.Button(root , text = 'Start timer', command = start_timer)
+    timer_button.grid(row=0, column=1)
+
+    # Stop start clock button
+    timer_stop_button = tkinter.Button(root , text = 'Stop timer', command = stop_timer)
+    timer_stop_button.grid(row=0, column=3)
+
+
     # Add header row
     select_text = StringVar()
     entry_1 = Entry(root, textvariable = select_text, state = 'readonly')
@@ -142,12 +213,12 @@ def init_window():
     entry_1.grid(row = 1, column = 0 )
 
     info_labels = StringVar()
-    entry_2 = Entry(root, textvariable = info_labels, state = 'readonly', width=20)
+    entry_2 = Entry(root, textvariable = info_labels, state = 'readonly', width=30)
     info_labels.set('Place')
     entry_2.grid(row = 1, column = 1 )
 
     info_labels = StringVar()
-    entry_2 = Entry(root, textvariable = info_labels, state = 'readonly', width=100)
+    entry_2 = Entry(root, textvariable = info_labels, state = 'readonly', width=70)
     info_labels.set('Notes')
     entry_2.grid(row = 1, column = 2 )
 
