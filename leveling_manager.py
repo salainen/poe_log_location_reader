@@ -1,13 +1,13 @@
-from tkinter import *
 import tkinter
+from tkinter import *
+from tkinter import filedialog
 import os
 import time
-import sys
 import threading
 
+# set location for the leveling_setup.txt:
 dir_path = os.path.dirname(os.path.realpath(__file__))
 leveling_text = dir_path + "/leveling_setup.txt"
-log_file_name = dir_path + "/Client.txt"
 
 global level_data
 
@@ -44,17 +44,22 @@ def read_instructions(line):
             if check_this_line.lower() in level_data[x].lower():
 
                 add_row(level_data[x])
+                level_data.pop(x)
+                break
 
-def follow(thefile):
+def follow(client_log):
     
     ''' check target file for changes
 
     '''
-    thefile.seek(0,2) # Go to the end of the file
+    # end of file
+    client_log.seek(0,2) 
     while True:
-        line = thefile.readline()
+        line = client_log.readline()
         if not line:
-            time.sleep(1) # Sleep briefly
+            # we want a small sleep here
+            # no need to burn CPU
+            time.sleep(1) 
             continue
         yield line
 
@@ -66,13 +71,12 @@ def task_master(name):
     will call read_instructions() function
 
     '''
+    
     logfile = open(log_file_name,"r")
     loglines = follow(logfile)
     for line in loglines:
         if " : You have entered " in line:
             read_instructions(line)
-
-
 
 def add_row(text_to_add):
 
@@ -121,41 +125,61 @@ def delete_row():
                 i.destroy()
             rows.pop(rowno)
 
+def init_window():
+
+    ''' handles main ui creation
+
+    '''
+
+    # Add delete row button
+    delete_button = tkinter.Button(root , text = 'Delete selected Row', command = delete_row)
+    delete_button.grid(row =0, column=0)
+
+    # Add header row
+    select_text = StringVar()
+    entry_1 = Entry(root, textvariable = select_text, state = 'readonly')
+    select_text.set('Select')
+    entry_1.grid(row = 1, column = 0 )
+
+    info_labels = StringVar()
+    entry_2 = Entry(root, textvariable = info_labels, state = 'readonly', width=20)
+    info_labels.set('Place')
+    entry_2.grid(row = 1, column = 1 )
+
+    info_labels = StringVar()
+    entry_2 = Entry(root, textvariable = info_labels, state = 'readonly', width=100)
+    info_labels.set('Notes')
+    entry_2.grid(row = 1, column = 2 )
+
 # main stuff under this line:
+
+# open leveling notes:
 with open(leveling_text) as f:
     level_data = f.readlines()
 
 level_data = [x.strip() for x in level_data]
-#print(level_data)
+
+# create the main window:
 i=2
 rows = []
 root = Tk()
 
-# Add delete row button
-dl = tkinter.Button(root , text = 'Delete selected Row', command = delete_row)
-dl.grid(row =0, column=0)
+init_window()
 
-v0 = StringVar()
-e0 = Entry(root, textvariable = v0, state = 'readonly')
-v0.set('Select')
-e0.grid(row = 1, column = 0 )
-
-# Add header row
-v1 = StringVar()
-e1 = Entry(root, textvariable = v1, state = 'readonly', width=20)
-v1.set('Place')
-e1.grid(row = 1, column = 1 )
-
-v1 = StringVar()
-e1 = Entry(root, textvariable = v1, state = 'readonly', width=100)
-v1.set('Notes')
-e1.grid(row = 1, column = 2 )
+# open file dialog:
+log_file_name = None
+while not log_file_name:
+    root.filename =  filedialog.askopenfilename(initialdir = "/",title = "Open Client.txt",filetypes = (("client log","*.txt"),("all files","*.*")))
+    print (root.filename)
+    log_file_name = root.filename
+root.title("Monitoring: " + log_file_name)
 
 # start file monitoring thread:
 file_reader = threading.Thread(target=task_master, args=(1,))
 file_reader.start()
 
-#root.wm_geometry("400x50")
+# make sure our window stays on top:
+root.wm_attributes("-topmost", 1)
 
 # start main tkinter loop:
 mainloop()
