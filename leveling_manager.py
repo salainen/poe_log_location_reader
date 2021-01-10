@@ -1,6 +1,8 @@
 import tkinter
 from tkinter import *
 from tkinter import filedialog
+
+
 import os
 import time
 import threading
@@ -112,10 +114,10 @@ def add_row(text_to_add):
     rows.append(delete_entry)
 
     # create notes label:
-    notes_label = Entry(root, width=50)
+    notes_label = Entry(root)
     notes_label.insert(END, notes_data)
     items.append(notes_label)
-    notes_label.grid(sticky="E,W", row=i, column=1)
+    notes_label.grid(sticky="E,W", row=i, column=1, columnspan=2)
 
     # add all added items to rows -list:
     rows.append(items)
@@ -194,9 +196,10 @@ def timer_thread(time_arg):
         
     # creates the timer label in the main UI
     timer_text = StringVar()
-    timer_label = Entry(root, textvariable = timer_text, state = 'readonly', width=10)
-    #timer_text.set('00:00:00')
+    timer_label = Entry(root, textvariable = timer_text, state = 'readonly', width=12)
+    timer_text.set('00:00:00')
     timer_label.config(font=("Courier", 30))
+    
     timer_label.grid(sticky="E,W", row=0, column=1)
 
     global stop_time
@@ -233,7 +236,7 @@ def border_remove():
         x.destroy()
     root.overrideredirect(1)
     add_borders = tkinter.Button(root , text = 'add borders', command = border_add)
-    add_borders.grid(sticky="E,W", row=1, column=0)
+    add_borders.grid(sticky="E,W", row=0, column=2)
     borders_store.append(add_borders)
 
 def border_add():
@@ -245,7 +248,7 @@ def border_add():
         x.destroy()
     root.overrideredirect(0)
     remove_borders = tkinter.Button(root , text = 'remove borders', command = border_remove)
-    remove_borders.grid(sticky="E,W", row=1, column=0)
+    remove_borders.grid(sticky="E,W", row=0, column=2)
     borders_store.append(remove_borders)
 
 def init_window():
@@ -257,12 +260,21 @@ def init_window():
     # Add start clock button
     timer_start_button = tkinter.Button(root , text = 'Start timer', command = start_timer)
     timer_start_button.grid(sticky="E,W", row=0, column=0)
+    
     timer_store.append(timer_start_button)
 
     # add remove borders button
     remove_borders = tkinter.Button(root , text = 'remove borders', command = border_remove)
-    remove_borders.grid(sticky="E,W", row=1, column=0)
+    remove_borders.grid(sticky="E,W", row=0, column=2)
+    
     borders_store.append(remove_borders)
+
+    timer_text = StringVar()
+    timer_label = Entry(root, textvariable = timer_text, state = 'readonly', width=12)
+    timer_text.set('0:00:00.000')
+    timer_label.config(font=("Courier", 30))
+    
+    timer_label.grid(sticky="E,W", row=0, column=1)
 
 # main stuff under this line:
 
@@ -277,6 +289,7 @@ i=2
 rows = []
 row_index = []
 root = Tk()
+
 
 borders_store = []
 timer_store = []
